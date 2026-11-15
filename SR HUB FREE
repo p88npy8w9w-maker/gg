@@ -1,13 +1,378 @@
--- SR HUB PROFILE IMAGE
+
+--// SR LIVE
+--// LocalScript - StarterPlayerScripts
+
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local LP = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+local PlayerGui = LP:WaitForChild("PlayerGui")
+
+local PROFILE_IMAGE = "rbxassetid://84018027183019"
+
+local Settings = {
+    Name = false,
+    Health = false,
+    Player = false,
+    Tracer = false
+}
+
+--// GUI
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "SRLive"
+Gui.ResetOnSpawn = false
+Gui.Parent = PlayerGui
+
+--// Main Window
+local Main = Instance.new("Frame")
+Main.Name = "Main"
+Main.Size = UDim2.fromOffset(310, 350)
+Main.Position = UDim2.new(0.5, -155, 0.5, -175)
+Main.BackgroundColor3 = Color3.fromRGB(12, 17, 30)
+Main.BorderSizePixel = 0
+Main.Parent = Gui
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 12)
+MainCorner.Parent = Main
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = Color3.fromRGB(0, 140, 255)
+MainStroke.Thickness = 2
+MainStroke.Parent = Main
+
+--// Header
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1, 0, 0, 65)
+Header.BackgroundColor3 = Color3.fromRGB(18, 29, 50)
+Header.BorderSizePixel = 0
+Header.Parent = Main
+
+local HeaderCorner = Instance.new("UICorner")
+HeaderCorner.CornerRadius = UDim.new(0, 12)
+HeaderCorner.Parent = Header
+
 local Profile = Instance.new("ImageLabel")
-Profile.Name = "SRProfile"
-Profile.Size = UDim2.new(0, 34, 0, 34)
-Profile.Position = UDim2.new(0, 10, 0, 7)
+Profile.Size = UDim2.fromOffset(43, 43)
+Profile.Position = UDim2.fromOffset(12, 10)
 Profile.BackgroundTransparency = 1
-Profile.Image = "rbxassetid://84018027183019"
-Profile.ScaleType = Enum.ScaleType.Crop
+Profile.Image = PROFILE_IMAGE
 Profile.Parent = Header
 
 local ProfileCorner = Instance.new("UICorner")
 ProfileCorner.CornerRadius = UDim.new(1, 0)
 ProfileCorner.Parent = Profile
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -110, 1, 0)
+Title.Position = UDim2.fromOffset(65, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "SR Live"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextSize = 22
+Title.Font = Enum.Font.GothamBold
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Header
+
+local Close = Instance.new("TextButton")
+Close.Size = UDim2.fromOffset(35, 35)
+Close.Position = UDim2.new(1, -45, 0, 14)
+Close.BackgroundColor3 = Color3.fromRGB(180, 45, 55)
+Close.Text = "X"
+Close.TextColor3 = Color3.new(1, 1, 1)
+Close.TextSize = 18
+Close.Font = Enum.Font.GothamBold
+Close.Parent = Header
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 8)
+CloseCorner.Parent = Close
+
+--// Content
+local Content = Instance.new("Frame")
+Content.Size = UDim2.new(1, -20, 1, -80)
+Content.Position = UDim2.fromOffset(10, 72)
+Content.BackgroundTransparency = 1
+Content.Parent = Main
+
+local Layout = Instance.new("UIListLayout")
+Layout.Padding = UDim.new(0, 8)
+Layout.SortOrder = Enum.SortOrder.LayoutOrder
+Layout.Parent = Content
+
+local function MakeButton(text, setting)
+    local Button = Instance.new("TextButton")
+    Button.Size = UDim2.new(1, 0, 0, 48)
+    Button.BackgroundColor3 = Color3.fromRGB(25, 38, 62)
+    Button.TextColor3 = Color3.fromRGB(230, 240, 255)
+    Button.TextSize = 15
+    Button.Font = Enum.Font.GothamBold
+    Button.Text = text .. " : OFF"
+    Button.Parent = Content
+
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0, 8)
+    Corner.Parent = Button
+
+    Button.Activated:Connect(function()
+        Settings[setting] = not Settings[setting]
+        Button.Text = text .. (Settings[setting] and " : ON" or " : OFF")
+        Button.BackgroundColor3 = Settings[setting]
+            and Color3.fromRGB(0, 105, 190)
+            or Color3.fromRGB(25, 38, 62)
+    end)
+end
+
+MakeButton("Name ESP", "Name")
+MakeButton("Health ESP", "Health")
+MakeButton("Player ESP", "Player")
+MakeButton("Tracer ESP", "Tracer")
+
+--// Floating profile button
+local Toggle = Instance.new("ImageButton")
+Toggle.Name = "SR"
+Toggle.Size = UDim2.fromOffset(55, 55)
+Toggle.Position = UDim2.new(0, 20, 0.5, -27)
+Toggle.BackgroundColor3 = Color3.fromRGB(15, 25, 45)
+Toggle.Image = PROFILE_IMAGE
+Toggle.ScaleType = Enum.ScaleType.Crop
+Toggle.Visible = false
+Toggle.Parent = Gui
+
+local ToggleCorner = Instance.new("UICorner")
+ToggleCorner.CornerRadius = UDim.new(1, 0)
+ToggleCorner.Parent = Toggle
+
+local ToggleStroke = Instance.new("UIStroke")
+ToggleStroke.Color = Color3.fromRGB(0, 160, 255)
+ToggleStroke.Thickness = 2
+ToggleStroke.Parent = Toggle
+
+Close.Activated:Connect(function()
+    Main.Visible = false
+    Toggle.Visible = true
+end)
+
+--// Drag helper: mouse + touch
+local function MakeDraggable(object, dragArea)
+    local dragging = false
+    local dragInput
+    local dragStart
+    local startPosition
+
+    dragArea.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPosition = object.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    dragArea.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+
+    UIS.InputChanged:Connect(function(input)
+        if dragging and (input == dragInput
+        or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            object.Position = UDim2.new(
+                startPosition.X.Scale,
+                startPosition.X.Offset + delta.X,
+                startPosition.Y.Scale,
+                startPosition.Y.Offset + delta.Y
+            )
+        end
+    end)
+end
+
+MakeDraggable(Main, Header)
+MakeDraggable(Toggle, Toggle)
+
+--// Profile button click / drag
+local toggleStart
+local toggleMoved = false
+
+Toggle.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+        toggleStart = input.Position
+        toggleMoved = false
+    end
+end)
+
+Toggle.InputChanged:Connect(function(input)
+    if toggleStart and (
+        input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch
+    ) then
+        if (input.Position - toggleStart).Magnitude > 8 then
+            toggleMoved = true
+        end
+    end
+end)
+
+Toggle.Activated:Connect(function()
+    if not toggleMoved then
+        Main.Visible = true
+        Toggle.Visible = false
+    end
+end)
+
+--// ESP objects
+local ESP = {}
+
+local function GetPart(character, ...)
+    for _, name in ipairs({...}) do
+        local part = character and character:FindFirstChild(name)
+        if part then
+            return part
+        end
+    end
+end
+
+local function CreateESP(player)
+    if player == LP or ESP[player] then return end
+
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "SR_NameHealth"
+    billboard.Size = UDim2.fromOffset(150, 45)
+    billboard.StudsOffset = Vector3.new(0, 3, 0)
+    billboard.AlwaysOnTop = true
+    billboard.Enabled = false
+    billboard.Parent = PlayerGui
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.fromScale(1, 1)
+    label.BackgroundTransparency = 1
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.TextStrokeTransparency = 0
+    label.Font = Enum.Font.GothamBold
+    label.TextSize = 14
+    label.Parent = billboard
+
+    local highlight = Instance.new("Highlight")
+    highlight.FillColor = Color3.fromRGB(0, 130, 255)
+    highlight.OutlineColor = Color3.fromRGB(80, 190, 255)
+    highlight.Enabled = false
+    highlight.Parent = workspace
+
+    -- Tracer line
+    local line = Instance.new("Frame")
+    line.Name = "Tracer"
+    line.AnchorPoint = Vector2.new(0, 0.5)
+    line.BorderSizePixel = 0
+    line.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+    line.Visible = false
+    line.Parent = Gui
+
+    ESP[player] = {
+        Billboard = billboard,
+        Label = label,
+        Highlight = highlight,
+        Line = line
+    }
+end
+
+local function RemoveESP(player)
+    local data = ESP[player]
+    if not data then return end
+
+    data.Billboard:Destroy()
+    data.Highlight:Destroy()
+    data.Line:Destroy()
+    ESP[player] = nil
+end
+
+for _, player in ipairs(Players:GetPlayers()) do
+    CreateESP(player)
+end
+
+Players.PlayerAdded:Connect(CreateESP)
+Players.PlayerRemoving:Connect(RemoveESP)
+
+--// Update ESP
+RunService.RenderStepped:Connect(function()
+    Camera = workspace.CurrentCamera
+
+    for player, data in pairs(ESP) do
+        local character = player.Character
+        local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+        local head = GetPart(character, "Head")
+        local root = GetPart(character, "HumanoidRootPart")
+
+        data.Line.Visible = false
+        data.Billboard.Enabled = false
+        data.Highlight.Enabled = false
+
+        if character and humanoid and humanoid.Health > 0 then
+            data.Billboard.Adornee = head
+            data.Billboard.Enabled = head ~= nil
+                and (Settings.Name or Settings.Health)
+
+            local nameText = Settings.Name and player.Name or ""
+            local healthText = Settings.Health
+                and ("HP: " .. math.floor(humanoid.Health) .. "/" ..
+                math.floor(humanoid.MaxHealth)) or ""
+
+            data.Label.Text = nameText
+            if nameText ~= "" and healthText ~= "" then
+                data.Label.Text = nameText .. "\n" .. healthText
+            elseif healthText ~= "" then
+                data.Label.Text = healthText
+            end
+
+            data.Highlight.Adornee = character
+            data.Highlight.Enabled = Settings.Player
+
+            if Settings.Tracer and root then
+                local myCharacter = LP.Character
+                local myLeg = GetPart(
+                    myCharacter,
+                    "LeftFoot", "Left Leg",
+                    "RightFoot", "Right Leg"
+                )
+                local targetLeg = GetPart(
+                    character,
+                    "LeftFoot", "Left Leg",
+                    "RightFoot", "Right Leg"
+                )
+
+                if myLeg and targetLeg then
+                    local fromPos, fromVisible =
+                        Camera:WorldToViewportPoint(myLeg.Position)
+                    local toPos, toVisible =
+                        Camera:WorldToViewportPoint(targetLeg.Position)
+
+                    if fromVisible and toVisible then
+                        local startPoint = Vector2.new(fromPos.X, fromPos.Y)
+                        local endPoint = Vector2.new(toPos.X, toPos.Y)
+                        local difference = endPoint - startPoint
+
+                        data.Line.Position = UDim2.fromOffset(
+                            startPoint.X, startPoint.Y
+                        )
+                        data.Line.Size = UDim2.fromOffset(
+                            difference.Magnitude, 2
+                        )
+                        data.Line.Rotation =
+                            math.deg(math.atan2(difference.Y, difference.X))
+                        data.Line.Visible = true
+                    end
+                end
+            end
+        end
+    end
+end)
