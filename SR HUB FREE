@@ -1,0 +1,13 @@
+-- SR HUB PROFILE IMAGE
+local Profile = Instance.new("ImageLabel")
+Profile.Name = "SRProfile"
+Profile.Size = UDim2.new(0, 34, 0, 34)
+Profile.Position = UDim2.new(0, 10, 0, 7)
+Profile.BackgroundTransparency = 1
+Profile.Image = "rbxassetid://84018027183019"
+Profile.ScaleType = Enum.ScaleType.Crop
+Profile.Parent = Header
+
+local ProfileCorner = Instance.new("UICorner")
+ProfileCorner.CornerRadius = UDim.new(1, 0)
+ProfileCorner.Parent = Profile
